@@ -6,6 +6,7 @@ import { Header } from "@/components/layout/header"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import { ReminderFilters } from "@/components/reminders/reminder-filters"
+import { SortToggle } from "@/components/reminders/sort-toggle"
 import { ReminderCard } from "@/components/reminders/reminder-card"
 import { ReminderEmpty } from "@/components/reminders/reminder-empty"
 import { ReminderListSkeleton } from "@/components/reminders/reminder-skeleton"
@@ -54,20 +55,28 @@ const mockReminders: Reminder[] = [
 export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState<"all" | "scheduled" | "completed" | "failed">("all")
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null)
   const [reminders, setReminders] = useState<Reminder[]>(mockReminders)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Filter reminders based on search and active tab
-  const filteredReminders = reminders.filter((reminder) => {
-    const matchesSearch = reminder.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      reminder.message.toLowerCase().includes(searchQuery.toLowerCase())
+  // Filter and sort reminders
+  const filteredReminders = reminders
+    .filter((reminder) => {
+      const matchesSearch = reminder.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        reminder.message.toLowerCase().includes(searchQuery.toLowerCase())
 
-    const matchesTab = activeTab === "all" || reminder.status === activeTab
+      const matchesTab = activeTab === "all" || reminder.status === activeTab
 
-    return matchesSearch && matchesTab
-  })
+      return matchesSearch && matchesTab
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.scheduledFor).getTime()
+      const dateB = new Date(b.scheduledFor).getTime()
+
+      return sortOrder === "asc" ? dateA - dateB : dateB - dateA
+    })
 
   // Calculate counts for tabs
   const counts = {
@@ -166,8 +175,8 @@ export default function DashboardPage() {
           className="mb-8"
         />
 
-        {/* Filters */}
-        <div className="mb-6">
+        {/* Filters and Sort */}
+        <div className="mb-6 space-y-4">
           <ReminderFilters
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -175,6 +184,14 @@ export default function DashboardPage() {
             onTabChange={setActiveTab}
             counts={counts}
           />
+
+          {/* Sort Toggle */}
+          <div className="flex justify-end">
+            <SortToggle
+              sortOrder={sortOrder}
+              onSortOrderChange={setSortOrder}
+            />
+          </div>
         </div>
 
         {/* Content */}
