@@ -1,7 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh",
   "buildCommand": "npm run build",
-  "commandTimeout": 600,
   "devCommand": "npm run dev",
   "env": [
     "NEXT_PUBLIC_API_URL"
