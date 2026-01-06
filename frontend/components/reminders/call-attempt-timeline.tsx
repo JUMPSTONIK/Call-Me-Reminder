@@ -32,7 +32,7 @@ export function CallAttemptTimeline({ attempts }: CallAttemptTimelineProps) {
         return (
           <div key={attempt.id} className="relative">
             {!isLast && (
-              <div className="absolute left-[11px] top-8 bottom-0 w-0.5 bg-border" />
+              <div className="absolute left-2.75 top-8 bottom-0 w-0.5 bg-border" />
             )}
 
             <div className="flex items-start gap-4">
@@ -80,7 +80,7 @@ export function CallAttemptTimeline({ attempts }: CallAttemptTimelineProps) {
 
                   {attempt.failure_reason && (
                     <div className="flex items-start gap-2 text-destructive mt-2 p-2 rounded-md bg-destructive/10">
-                      <AlertCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                      <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
                       <span className="text-xs">{attempt.failure_reason}</span>
                     </div>
                   )}

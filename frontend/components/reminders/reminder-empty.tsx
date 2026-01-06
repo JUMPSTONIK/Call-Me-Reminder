@@ -29,7 +29,7 @@ export function ReminderEmpty({ onCreateClick }: ReminderEmptyProps) {
       <Button
         size="lg"
         onClick={onCreateClick}
-        className="shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 animate-in fade-in-50 zoom-in-50 duration-500 delay-700"
+        className="shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 animate-in fade-in-50 zoom-in-50 delay-700"
       >
         <Phone className="h-5 w-5 mr-2" />
         Create Your First Reminder
@@ -45,7 +45,7 @@ export function ReminderEmpty({ onCreateClick }: ReminderEmptyProps) {
           </p>
         </div>
 
-        <div className="text-center group animate-in fade-in-50 slide-in-from-bottom-2 duration-500 delay-[1100ms]">
+        <div className="text-center group animate-in fade-in-50 slide-in-from-bottom-2 duration-500 delay-1100">
           <div className="mx-auto w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:bg-green-200 dark:group-hover:bg-green-900/50">
             <Phone className="h-6 w-6 text-green-600 dark:text-green-400 transition-transform duration-300 group-hover:rotate-12" />
           </div>
@@ -54,7 +54,7 @@ export function ReminderEmpty({ onCreateClick }: ReminderEmptyProps) {
           </p>
         </div>
 
-        <div className="text-center group animate-in fade-in-50 slide-in-from-bottom-2 duration-500 delay-[1200ms]">
+        <div className="text-center group animate-in fade-in-50 slide-in-from-bottom-2 duration-500 delay-1200">
           <div className="mx-auto w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50">
             <Calendar className="h-6 w-6 text-purple-600 dark:text-purple-400 transition-transform duration-300 group-hover:rotate-12" />
           </div>

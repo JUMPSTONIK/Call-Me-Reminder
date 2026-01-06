@@ -16,7 +16,7 @@ export function PageHeader({ title, description, className }: PageHeaderProps) {
       )}
     >
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground bg-linear-to-r from-foreground to-foreground/70 bg-clip-text">
           {title}
         </h1>
         {description && (

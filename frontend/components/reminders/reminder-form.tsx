@@ -2,21 +2,10 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import {
-  Phone,
-  Calendar as CalendarIcon,
-  Clock,
-  Globe,
-  Plus,
-  Loader2,
-  CheckCircle,
-  AlertCircle,
-} from "lucide-react";
-import { format } from "date-fns";
+import { Plus, Loader2, Globe, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -25,19 +14,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-// Select component removed - timezone is now auto-detected
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import {
   reminderSchema,
   type ReminderFormValues,
 } from "@/lib/validations/reminder-schema";
-import { cn } from "@/lib/utils";
-import { useState, useEffect, useRef } from "react";
+import { FormField } from "@/components/forms/FormField";
+import { PhoneInput } from "@/components/forms/PhoneInput";
+import { DateTimeInput } from "@/components/forms/DateTimeInput";
+import { TextareaField } from "@/components/forms/TextareaField";
+import { useFormState } from "@/hooks/useFormState";
+import { useDateTimeValidation } from "@/hooks/useDateTimeValidation";
+import { useEffect } from "react";
 
 interface ReminderFormProps {
   open: boolean;
@@ -54,18 +41,8 @@ export function ReminderForm({
   defaultValues,
   isEditing = false,
 }: ReminderFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [date, setDate] = useState<Date | undefined>(
-    defaultValues?.scheduledFor,
-  );
-  const [time, setTime] = useState<string>("");
-  const [dateTouched, setDateTouched] = useState(false);
-  const [timeTouched, setTimeTouched] = useState(false);
-  const [dateError, setDateError] = useState<string>("");
-  const [timeError, setTimeError] = useState<string>("");
-  const timeInputRef = useRef<HTMLInputElement>(null);
-
   const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const { isSubmitting, withSubmitting } = useFormState();
 
   const form = useForm<ReminderFormValues>({
     resolver: zodResolver(reminderSchema),
@@ -80,6 +57,23 @@ export function ReminderForm({
     },
   });
 
+  const {
+    date,
+    time,
+    dateError,
+    timeError,
+    setDate,
+    setTime,
+    setDateTouched,
+    setTimeTouched,
+    validateDateTime,
+    resetDateTime,
+    setDateTimeFromValue,
+  } = useDateTimeValidation({
+    defaultDate: defaultValues?.scheduledFor,
+    setValue: form.setValue,
+  });
+
   useEffect(() => {
     if (defaultValues && open) {
       form.reset({
@@ -91,16 +85,7 @@ export function ReminderForm({
       });
 
       if (defaultValues.scheduledFor) {
-        setDate(defaultValues.scheduledFor);
-        const hours = defaultValues.scheduledFor
-          .getHours()
-          .toString()
-          .padStart(2, "0");
-        const minutes = defaultValues.scheduledFor
-          .getMinutes()
-          .toString()
-          .padStart(2, "0");
-        setTime(`${hours}:${minutes}`);
+        setDateTimeFromValue(defaultValues.scheduledFor);
       }
     } else if (!open) {
       form.reset({
@@ -110,70 +95,16 @@ export function ReminderForm({
         message: "",
         scheduledFor: undefined,
       });
-      setDate(undefined);
-      setTime("");
-      setDateTouched(false);
-      setTimeTouched(false);
-      setDateError("");
-      setTimeError("");
+      resetDateTime();
     }
-  }, [defaultValues, open, form, userTimezone]);
-
-  const validateDateTime = () => {
-    let hasError = false;
-
-    if (dateTouched && !date) {
-      setDateError("Please select a date");
-      hasError = true;
-    } else {
-      setDateError("");
-    }
-
-    if (timeTouched && !time) {
-      setTimeError("Please select a time");
-      hasError = true;
-    } else {
-      setTimeError("");
-    }
-
-    if (date && time) {
-      const [hours, minutes] = time.split(":");
-      const combinedDate = new Date(date);
-      combinedDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-      const now = new Date();
-      const oneYearFromNow = new Date();
-      oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
-
-      if (combinedDate <= now) {
-        setDateError("Selected date is in the past");
-        setTimeError("Selected time is in the past");
-        hasError = true;
-      } else if (combinedDate > oneYearFromNow) {
-        setDateError("Cannot schedule more than 1 year in advance");
-        setTimeError("");
-        hasError = true;
-      } else {
-        setDateError("");
-        setTimeError("");
-      }
-    }
-
-    return !hasError;
-  };
-
-  useEffect(() => {
-    if (date && time) {
-      const [hours, minutes] = time.split(":");
-      const combinedDate = new Date(date);
-      combinedDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-      form.setValue("scheduledFor", combinedDate, {
-        shouldValidate: false,
-        shouldDirty: true,
-        shouldTouch: true,
-      });
-    }
-    validateDateTime();
-  }, [date, time, dateTouched, timeTouched]);
+  }, [
+    defaultValues,
+    open,
+    form,
+    userTimezone,
+    resetDateTime,
+    setDateTimeFromValue,
+  ]);
 
   const handleSubmit = async (data: ReminderFormValues) => {
     setDateTouched(true);
@@ -183,27 +114,16 @@ export function ReminderForm({
       return;
     }
 
-    setIsSubmitting(true);
-    try {
+    await withSubmitting(async () => {
       await onSubmit(data);
       form.reset();
-      setDate(undefined);
-      setTime("");
-      setDateTouched(false);
-      setTimeTouched(false);
-      setDateError("");
-      setTimeError("");
+      resetDateTime();
       onOpenChange(false);
-    } catch (error) {
-      console.error("Error submitting form:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
+    });
   };
 
   const phoneNumber = form.watch("phoneNumber");
   const message = form.watch("message");
-  const phoneValid = phoneNumber && /^\+[1-9]\d{1,14}$/.test(phoneNumber);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -218,142 +138,44 @@ export function ReminderForm({
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="title">
-              Reminder Title <span className="text-destructive">*</span>
-            </Label>
+          <FormField
+            label="Reminder Title"
+            htmlFor="title"
+            required
+            error={form.formState.errors.title?.message}
+          >
             <Input
               id="title"
               placeholder="e.g., Call Mom on her birthday"
               {...form.register("title")}
-              className={
-                form.formState.errors.title ? "border-destructive" : ""
-              }
             />
-            {form.formState.errors.title && (
-              <p className="text-sm text-destructive flex items-center gap-1">
-                <AlertCircle className="h-4 w-4" />
-                {form.formState.errors.title.message}
-              </p>
-            )}
-          </div>
+          </FormField>
 
           <div className="space-y-2">
             <Label htmlFor="phone">
               Phone Number <span className="text-destructive">*</span>
             </Label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="+1 555 123 4567"
-                {...form.register("phoneNumber")}
-                className={cn(
-                  "pl-10",
-                  form.formState.errors.phoneNumber && "border-destructive",
-                )}
-              />
-            </div>
-            {phoneValid && !form.formState.errors.phoneNumber && (
-              <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
-                <CheckCircle className="h-4 w-4" />
-                Valid phone number
-              </p>
-            )}
-            {form.formState.errors.phoneNumber && (
-              <p className="text-sm text-destructive flex items-center gap-1">
-                <AlertCircle className="h-4 w-4" />
-                {form.formState.errors.phoneNumber.message}
-              </p>
-            )}
+            <PhoneInput
+              id="phone"
+              placeholder="+1 555 123 4567"
+              value={phoneNumber}
+              error={form.formState.errors.phoneNumber?.message}
+              {...form.register("phoneNumber")}
+            />
           </div>
 
           <div className="space-y-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>
-                  Date <span className="text-destructive">*</span>
-                </Label>
-                <Popover
-                  onOpenChange={(isOpen) => {
-                    if (!isOpen && !date) {
-                      setDateTouched(true);
-                    }
-                  }}
-                >
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      onClick={() => setDateTouched(true)}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !date && "text-muted-foreground",
-                        dateError && "border-destructive",
-                      )}
-                    >
-                      <CalendarIcon className="h-4 w-4 mr-2" />
-                      {date ? format(date, "PPP") : "Pick a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={date}
-                      onSelect={(newDate) => {
-                        setDate(newDate);
-                        setDateTouched(true);
-                      }}
-                      disabled={(date) =>
-                        date < new Date(new Date().setHours(0, 0, 0, 0))
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                {dateError && (
-                  <p className="text-sm text-destructive flex items-center gap-1">
-                    <AlertCircle className="h-4 w-4" />
-                    {dateError}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="time">
-                  Time <span className="text-destructive">*</span>
-                </Label>
-                <div className="relative">
-                  <Clock
-                    className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
-                    onClick={() => timeInputRef.current?.showPicker()}
-                  />
-                  <Input
-                    ref={timeInputRef}
-                    id="time"
-                    type="time"
-                    value={time}
-                    onChange={(e) => {
-                      setTime(e.target.value);
-                      setTimeTouched(true);
-                    }}
-                    onBlur={() => {
-                      setTimeTouched(true);
-                    }}
-                    className={cn(
-                      "pl-10",
-                      timeError && "border-destructive",
-                    )}
-                  />
-                </div>
-                {timeError && (
-                  <p className="text-sm text-destructive flex items-center gap-1">
-                    <AlertCircle className="h-4 w-4" />
-                    {timeError}
-                  </p>
-                )}
-              </div>
-            </div>
+            <DateTimeInput
+              date={date}
+              time={time}
+              onDateChange={setDate}
+              onTimeChange={setTime}
+              onDateTouched={() => setDateTouched(true)}
+              onTimeTouched={() => setTimeTouched(true)}
+              dateError={dateError}
+              timeError={timeError}
+              required
+            />
           </div>
 
           <div className="space-y-2">
@@ -368,38 +190,20 @@ export function ReminderForm({
             </p>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="message">
-              Message <span className="text-destructive">*</span>
-            </Label>
-            <Textarea
+          <FormField
+            label="Message"
+            htmlFor="message"
+            required
+            error={form.formState.errors.message?.message}
+          >
+            <TextareaField
               id="message"
               placeholder="What should we say when we call you?"
-              {...form.register("message")}
               rows={4}
-              maxLength={500}
-              className={cn(
-                "resize-none",
-                form.formState.errors.message && "border-destructive",
-              )}
+              currentLength={message?.length || 0}
+              {...form.register("message")}
             />
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">
-                {message?.length || 0} / 500 characters
-              </span>
-              {message && message.length >= 450 && (
-                <span className="text-amber-600 dark:text-amber-400">
-                  Almost at limit
-                </span>
-              )}
-            </div>
-            {form.formState.errors.message && (
-              <p className="text-sm text-destructive flex items-center gap-1">
-                <AlertCircle className="h-4 w-4" />
-                {form.formState.errors.message.message}
-              </p>
-            )}
-          </div>
+          </FormField>
 
           <DialogFooter>
             <Button

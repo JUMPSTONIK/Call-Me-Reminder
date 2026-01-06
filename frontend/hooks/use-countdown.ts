@@ -10,7 +10,6 @@ export function useCountdown(targetDate: Date) {
     // Initial update
     setTimeRemaining(formatDistanceToNow(targetDate, { addSuffix: true }));
 
-    // Update every second
     const interval = setInterval(() => {
       setTimeRemaining(formatDistanceToNow(targetDate, { addSuffix: true }));
     }, 1000);
