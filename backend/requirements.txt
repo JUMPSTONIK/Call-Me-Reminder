@@ -12,3 +12,9 @@ twilio==8.10.0
 phonenumbers==8.13.26
 pytz==2023.3
 alembic==1.13.0
+# Additional dependencies for Render deployment
+certifi==2024.2.2
+charset-normalizer==3.3.2
+idna==3.6
+requests==2.31.0
+urllib3==2.1.0
