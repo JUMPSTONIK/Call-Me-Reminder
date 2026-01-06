@@ -3,10 +3,8 @@ services:
     name: call-me-reminder-backend
     runtime: python
     rootDir: backend
-    buildCommand: pip install --upgrade pip setuptools wheel && pip install --no-cache-dir -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    buildCommand: "pip install --only-binary :all: -r requirements.txt"
+    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port 10000"
     envVars:
-      - key: PIP_NO_CACHE_DIR
-        value: "true"
       - key: PYTHONUNBUFFERED
         value: "true"
