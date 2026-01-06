@@ -13,7 +13,6 @@
   },
   "installCommand": "npm install",
   "outputDirectory": ".next",
-  "publicSource": "./public",
   "regions": [
     "iad1"
   ],
