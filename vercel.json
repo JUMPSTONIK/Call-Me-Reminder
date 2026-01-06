@@ -22,7 +22,5 @@
       "destination": "https://call-me-reminder-backend.onrender.com/api/:path*"
     }
   ],
-  "redirects": [],
-  "root": "frontend",
-  "skipDownloadingServerless": false
+  "redirects": []
 }
