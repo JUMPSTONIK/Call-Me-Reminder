@@ -7,6 +7,8 @@ import { ReminderFilters } from "@/components/reminders/reminder-filters";
 import { SortToggle } from "@/components/reminders/sort-toggle";
 import { ReminderCard } from "@/components/reminders/reminder-card";
 import { ReminderEmpty } from "@/components/reminders/reminder-empty";
+import { ReminderError } from "@/components/reminders/reminder-error";
+import { ReminderNoResults } from "@/components/reminders/reminder-no-results";
 import { ReminderListSkeleton } from "@/components/reminders/reminder-skeleton";
 import { ReminderForm } from "@/components/reminders/reminder-form";
 import { toast } from "sonner";
@@ -33,6 +35,7 @@ export default function DashboardPage() {
     data: reminders = [],
     isLoading,
     error,
+    refetch,
   } = useReminders({ status: statusFilter });
 
   const createMutation = useCreateReminder();
@@ -166,12 +169,10 @@ export default function DashboardPage() {
       <div className="min-h-screen bg-background">
         <Header onNewReminderClick={handleOpenForm} />
         <main className="container mx-auto py-8 px-4">
-          <div className="text-center py-12">
-            <p className="text-destructive mb-2">Failed to load reminders</p>
-            <p className="text-sm text-muted-foreground">
-              {error instanceof Error ? error.message : "An error occurred"}
-            </p>
-          </div>
+          <ReminderError
+            message={error instanceof Error ? error.message : undefined}
+            onRetry={() => refetch()}
+          />
         </main>
       </div>
     );
@@ -211,11 +212,10 @@ export default function DashboardPage() {
           reminders.length === 0 ? (
             <ReminderEmpty onCreateClick={handleOpenForm} />
           ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                No reminders found matching your search.
-              </p>
-            </div>
+            <ReminderNoResults
+              searchQuery={searchQuery}
+              onClearSearch={() => setSearchQuery("")}
+            />
           )
         ) : (
           <div className="space-y-4">

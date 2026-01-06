@@ -146,34 +146,26 @@ Once the backend is running, visit:
 
 ## 🧪 Testing
 
-### Manual Testing Checklist
+Run tests with a single command:
 
-**Frontend:**
-- [ ] Theme toggle works (light/dark/system)
-- [ ] Theme persists on refresh
-- [ ] Responsive: test mobile, tablet, desktop
-- [ ] Filter tabs → dropdown on mobile
-- [ ] Search functionality works
-- [ ] Form validation shows errors
-- [ ] Loading skeletons appear
-- [ ] Empty state shows when no reminders
-- [ ] Toast notifications appear on actions
+```bash
+make test          # Run all tests (backend + frontend)
+make test-backend  # Run backend tests only
+make test-frontend # Run frontend tests only
+```
 
-**Backend:**
-- [ ] Swagger UI accessible at /docs
-- [ ] CORS allows frontend requests
-- [ ] Validation errors return 400
-- [ ] Scheduler starts on server start
-- [ ] Pending reminders re-scheduled
-- [ ] Call attempts logged in database
+### Test Coverage
 
-### Quick Reminder Test (2 minutes)
+**Backend (Pytest):**
+- ✅ Schema validation tests
+- ✅ Input validation (phone numbers, dates, messages)
+- ✅ Business logic validation
 
-1. Create a reminder scheduled for 2 minutes from now
-2. Check dashboard - should see countdown
-3. Wait 2 minutes
-4. Check status - should change to 'completed' or 'failed'
-5. View call attempts in the activity log
+**Frontend (Vitest):**
+- ✅ Form validation (Zod schemas)
+- ✅ Phone number format validation
+- ✅ Date/time validation
+- ✅ Input constraints (min/max lengths)
 
 ## 📂 Project Structure
 
@@ -247,22 +239,6 @@ Call-Me-Reminder-Front/
 - **Max Future**: Maximum 1 year ahead
 - **Timezone**: Auto-detected from browser
 
-## 🌐 Deployment
-
-### Frontend (Vercel)
-
-1. Push code to GitHub
-2. Import project in Vercel
-3. Set **Root Directory** to `frontend`
-4. Add environment variable: `NEXT_PUBLIC_API_URL`
-5. Deploy
-
-### Backend (Render/Railway/Fly.io)
-
-1. Use provided Dockerfile
-2. Set environment variables
-3. Configure PostgreSQL database
-4. Deploy and run migrations
 
 ## 🤝 Contributing
 

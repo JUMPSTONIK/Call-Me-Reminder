@@ -61,3 +61,17 @@ build:
 migrate:
 	@docker-compose exec backend alembic upgrade head
 	@echo "✅ Migrations complete"
+
+test:
+	@echo "🧪 Running all tests..."
+	@$(MAKE) test-backend
+	@$(MAKE) test-frontend
+	@echo "✅ All tests passed!"
+
+test-backend:
+	@echo "🐍 Running backend tests..."
+	@docker-compose exec backend python -m pytest tests/ -v
+
+test-frontend:
+	@echo "⚛️  Running frontend tests..."
+	@docker-compose exec frontend npm test

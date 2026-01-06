@@ -59,12 +59,18 @@ export function ReminderForm({
     defaultValues?.scheduledFor,
   );
   const [time, setTime] = useState<string>("");
+  const [dateTouched, setDateTouched] = useState(false);
+  const [timeTouched, setTimeTouched] = useState(false);
+  const [dateError, setDateError] = useState<string>("");
+  const [timeError, setTimeError] = useState<string>("");
   const timeInputRef = useRef<HTMLInputElement>(null);
 
   const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   const form = useForm<ReminderFormValues>({
     resolver: zodResolver(reminderSchema),
+    mode: "onTouched",
+    reValidateMode: "onChange",
     defaultValues: {
       title: defaultValues?.title || "",
       phoneNumber: defaultValues?.phoneNumber || "",
@@ -106,25 +112,87 @@ export function ReminderForm({
       });
       setDate(undefined);
       setTime("");
+      setDateTouched(false);
+      setTimeTouched(false);
+      setDateError("");
+      setTimeError("");
     }
   }, [defaultValues, open, form, userTimezone]);
+
+  const validateDateTime = () => {
+    let hasError = false;
+
+    if (dateTouched && !date) {
+      setDateError("Please select a date");
+      hasError = true;
+    } else {
+      setDateError("");
+    }
+
+    if (timeTouched && !time) {
+      setTimeError("Please select a time");
+      hasError = true;
+    } else {
+      setTimeError("");
+    }
+
+    if (date && time) {
+      const [hours, minutes] = time.split(":");
+      const combinedDate = new Date(date);
+      combinedDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      const now = new Date();
+      const oneYearFromNow = new Date();
+      oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+
+      if (combinedDate <= now) {
+        setDateError("Selected date is in the past");
+        setTimeError("Selected time is in the past");
+        hasError = true;
+      } else if (combinedDate > oneYearFromNow) {
+        setDateError("Cannot schedule more than 1 year in advance");
+        setTimeError("");
+        hasError = true;
+      } else {
+        setDateError("");
+        setTimeError("");
+      }
+    }
+
+    return !hasError;
+  };
 
   useEffect(() => {
     if (date && time) {
       const [hours, minutes] = time.split(":");
       const combinedDate = new Date(date);
       combinedDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-      form.setValue("scheduledFor", combinedDate);
+      form.setValue("scheduledFor", combinedDate, {
+        shouldValidate: false,
+        shouldDirty: true,
+        shouldTouch: true,
+      });
     }
-  }, [date, time, form]);
+    validateDateTime();
+  }, [date, time, dateTouched, timeTouched]);
 
   const handleSubmit = async (data: ReminderFormValues) => {
+    setDateTouched(true);
+    setTimeTouched(true);
+
+    if (!validateDateTime()) {
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await onSubmit(data);
       form.reset();
       setDate(undefined);
       setTime("");
+      setDateTouched(false);
+      setTimeTouched(false);
+      setDateError("");
+      setTimeError("");
       onOpenChange(false);
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -139,7 +207,7 @@ export function ReminderForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-150 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Edit Reminder" : "Create New Reminder"}
@@ -201,55 +269,89 @@ export function ReminderForm({
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>
-                Date <span className="text-destructive">*</span>
-              </Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !date && "text-muted-foreground",
-                    )}
-                  >
-                    <CalendarIcon className="h-4 w-4 mr-2" />
-                    {date ? format(date, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    disabled={(date) =>
-                      date < new Date(new Date().setHours(0, 0, 0, 0))
+          <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>
+                  Date <span className="text-destructive">*</span>
+                </Label>
+                <Popover
+                  onOpenChange={(isOpen) => {
+                    if (!isOpen && !date) {
+                      setDateTouched(true);
                     }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+                  }}
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      onClick={() => setDateTouched(true)}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !date && "text-muted-foreground",
+                        dateError && "border-destructive",
+                      )}
+                    >
+                      <CalendarIcon className="h-4 w-4 mr-2" />
+                      {date ? format(date, "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={(newDate) => {
+                        setDate(newDate);
+                        setDateTouched(true);
+                      }}
+                      disabled={(date) =>
+                        date < new Date(new Date().setHours(0, 0, 0, 0))
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                {dateError && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertCircle className="h-4 w-4" />
+                    {dateError}
+                  </p>
+                )}
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="time">
-                Time <span className="text-destructive">*</span>
-              </Label>
-              <div className="relative">
-                <Clock
-                  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
-                  onClick={() => timeInputRef.current?.showPicker()}
-                />
-                <Input
-                  ref={timeInputRef}
-                  id="time"
-                  type="time"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  className="pl-10"
-                />
+              <div className="space-y-2">
+                <Label htmlFor="time">
+                  Time <span className="text-destructive">*</span>
+                </Label>
+                <div className="relative">
+                  <Clock
+                    className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+                    onClick={() => timeInputRef.current?.showPicker()}
+                  />
+                  <Input
+                    ref={timeInputRef}
+                    id="time"
+                    type="time"
+                    value={time}
+                    onChange={(e) => {
+                      setTime(e.target.value);
+                      setTimeTouched(true);
+                    }}
+                    onBlur={() => {
+                      setTimeTouched(true);
+                    }}
+                    className={cn(
+                      "pl-10",
+                      timeError && "border-destructive",
+                    )}
+                  />
+                </div>
+                {timeError && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertCircle className="h-4 w-4" />
+                    {timeError}
+                  </p>
+                )}
               </div>
             </div>
           </div>
