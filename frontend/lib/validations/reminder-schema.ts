@@ -16,9 +16,7 @@ export const reminderSchema = z.object({
       "Phone number must be in E.164 format (e.g., +15551234567)",
     ),
 
-  scheduledFor: z.date({
-    required_error: "Please select a date and time",
-  }),
+  scheduledFor: z.date(),
 
   timezone: z.string().min(1, "Please select a timezone"),
 
