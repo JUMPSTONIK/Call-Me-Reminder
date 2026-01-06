@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface SortToggleProps {
-  sortOrder: "asc" | "desc"
-  onSortOrderChange: (order: "asc" | "desc") => void
-  className?: string
+  sortOrder: "asc" | "desc";
+  onSortOrderChange: (order: "asc" | "desc") => void;
+  className?: string;
 }
 
 export function SortToggle({
@@ -16,8 +16,8 @@ export function SortToggle({
   className,
 }: SortToggleProps) {
   const toggleSort = () => {
-    onSortOrderChange(sortOrder === "asc" ? "desc" : "asc")
-  }
+    onSortOrderChange(sortOrder === "asc" ? "desc" : "asc");
+  };
 
   return (
     <div className={cn("flex items-center gap-2", className)}>
@@ -45,5 +45,5 @@ export function SortToggle({
         )}
       </Button>
     </div>
-  )
+  );
 }

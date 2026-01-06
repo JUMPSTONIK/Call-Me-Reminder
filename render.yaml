@@ -1,0 +1,63 @@
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: call-me-reminder-db
+    runtime: docker
+    plan: standard
+    healthCheckPath: /
+    numInstances: 1
+    envVars:
+      - key: POSTGRES_USER
+        value: callme
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+      - key: POSTGRES_DB
+        value: call_me_reminder
+
+  # FastAPI Backend
+  - type: web
+    name: call-me-reminder-backend
+    runtime: docker
+    plan: standard
+    numInstances: 1
+    buildCommand: ""
+    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port 10000"
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: call-me-reminder-db
+          property: connectionString
+      - key: VAPI_API_KEY
+        sync: false
+      - key: VAPI_ASSISTANT_ID
+        sync: false
+      - key: VAPI_PHONE_NUMBER_ID
+        sync: false
+      - key: WEBHOOK_BASE_URL
+        value: https://call-me-reminder-backend.onrender.com
+      - key: ALLOWED_ORIGINS
+        value: https://call-me-reminder.vercel.app,https://yourdomain.com
+      - key: API_SECRET_KEY
+        generateValue: true
+      - key: SCHEDULER_TIMEZONE
+        value: UTC
+      - key: LOG_LEVEL
+        value: INFO
+
+  # Next.js Frontend (mejor usar Vercel, pero aquí la opción de Render)
+  - type: web
+    name: call-me-reminder-frontend
+    runtime: docker
+    plan: standard
+    numInstances: 1
+    buildCommand: "npm install && npm run build"
+    startCommand: "npm start"
+    healthCheckPath: /
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://call-me-reminder-backend.onrender.com

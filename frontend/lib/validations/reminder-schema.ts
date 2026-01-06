@@ -1,7 +1,7 @@
-import { z } from "zod"
+import { z } from "zod";
 
 // E.164 phone number format validation
-const phoneRegex = /^\+[1-9]\d{1,14}$/
+const phoneRegex = /^\+[1-9]\d{1,14}$/;
 
 export const reminderSchema = z.object({
   title: z
@@ -11,7 +11,10 @@ export const reminderSchema = z.object({
 
   phoneNumber: z
     .string()
-    .regex(phoneRegex, "Phone number must be in E.164 format (e.g., +15551234567)"),
+    .regex(
+      phoneRegex,
+      "Phone number must be in E.164 format (e.g., +15551234567)",
+    ),
 
   scheduledFor: z.date({
     required_error: "Please select a date and time",
@@ -23,6 +26,6 @@ export const reminderSchema = z.object({
     .string()
     .min(10, "Message must be at least 10 characters")
     .max(500, "Message must be less than 500 characters"),
-})
+});
 
-export type ReminderFormValues = z.infer<typeof reminderSchema>
+export type ReminderFormValues = z.infer<typeof reminderSchema>;

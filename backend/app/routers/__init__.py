@@ -1,3 +1,3 @@
-from app.routers import reminders
+from app.routers import reminders, webhooks
 
-__all__ = ["reminders"]
+__all__ = ["reminders", "webhooks"]

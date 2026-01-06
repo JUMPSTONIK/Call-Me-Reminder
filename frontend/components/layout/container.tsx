@@ -1,9 +1,9 @@
-import { ReactNode } from "react"
-import { cn } from "@/lib/utils"
+import { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 interface ContainerProps {
-  children: ReactNode
-  className?: string
+  children: ReactNode;
+  className?: string;
 }
 
 export function Container({ children, className }: ContainerProps) {
@@ -11,5 +11,5 @@ export function Container({ children, className }: ContainerProps) {
     <div className={cn("container mx-auto px-4 sm:px-6 lg:px-8", className)}>
       {children}
     </div>
-  )
+  );
 }

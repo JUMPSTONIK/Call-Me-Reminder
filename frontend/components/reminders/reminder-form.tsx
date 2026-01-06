@@ -1,13 +1,22 @@
-"use client"
+"use client";
 
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { Phone, Calendar as CalendarIcon, Clock, Globe, Plus, Loader2, CheckCircle, AlertCircle } from "lucide-react"
-import { format } from "date-fns"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import {
+  Phone,
+  Calendar as CalendarIcon,
+  Clock,
+  Globe,
+  Plus,
+  Loader2,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
+import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -15,30 +24,27 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/dialog";
+// Select component removed - timezone is now auto-detected
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
-import { reminderSchema, type ReminderFormValues } from "@/lib/validations/reminder-schema"
-import { cn } from "@/lib/utils"
-import { useState, useEffect } from "react"
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  reminderSchema,
+  type ReminderFormValues,
+} from "@/lib/validations/reminder-schema";
+import { cn } from "@/lib/utils";
+import { useState, useEffect, useRef } from "react";
 
 interface ReminderFormProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSubmit: (data: ReminderFormValues) => void | Promise<void>
-  defaultValues?: Partial<ReminderFormValues>
-  isEditing?: boolean
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (data: ReminderFormValues) => void | Promise<void>;
+  defaultValues?: Partial<ReminderFormValues>;
+  isEditing?: boolean;
 }
 
 export function ReminderForm({
@@ -48,52 +54,88 @@ export function ReminderForm({
   defaultValues,
   isEditing = false,
 }: ReminderFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [date, setDate] = useState<Date | undefined>(defaultValues?.scheduledFor)
-  const [time, setTime] = useState<string>("")
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [date, setDate] = useState<Date | undefined>(
+    defaultValues?.scheduledFor,
+  );
+  const [time, setTime] = useState<string>("");
+  const timeInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-detect timezone
-  const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   const form = useForm<ReminderFormValues>({
     resolver: zodResolver(reminderSchema),
     defaultValues: {
       title: defaultValues?.title || "",
       phoneNumber: defaultValues?.phoneNumber || "",
-      timezone: defaultValues?.timezone || userTimezone,
+      timezone: userTimezone,
       message: defaultValues?.message || "",
       scheduledFor: defaultValues?.scheduledFor || undefined,
     },
-  })
+  });
 
-  // Update scheduledFor when date or time changes
+  useEffect(() => {
+    if (defaultValues && open) {
+      form.reset({
+        title: defaultValues.title,
+        phoneNumber: defaultValues.phoneNumber,
+        timezone: userTimezone,
+        message: defaultValues.message,
+        scheduledFor: defaultValues.scheduledFor,
+      });
+
+      if (defaultValues.scheduledFor) {
+        setDate(defaultValues.scheduledFor);
+        const hours = defaultValues.scheduledFor
+          .getHours()
+          .toString()
+          .padStart(2, "0");
+        const minutes = defaultValues.scheduledFor
+          .getMinutes()
+          .toString()
+          .padStart(2, "0");
+        setTime(`${hours}:${minutes}`);
+      }
+    } else if (!open) {
+      form.reset({
+        title: "",
+        phoneNumber: "",
+        timezone: userTimezone,
+        message: "",
+        scheduledFor: undefined,
+      });
+      setDate(undefined);
+      setTime("");
+    }
+  }, [defaultValues, open, form, userTimezone]);
+
   useEffect(() => {
     if (date && time) {
-      const [hours, minutes] = time.split(":")
-      const combinedDate = new Date(date)
-      combinedDate.setHours(parseInt(hours), parseInt(minutes), 0, 0)
-      form.setValue("scheduledFor", combinedDate)
+      const [hours, minutes] = time.split(":");
+      const combinedDate = new Date(date);
+      combinedDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      form.setValue("scheduledFor", combinedDate);
     }
-  }, [date, time, form])
+  }, [date, time, form]);
 
   const handleSubmit = async (data: ReminderFormValues) => {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
-      await onSubmit(data)
-      form.reset()
-      setDate(undefined)
-      setTime("")
-      onOpenChange(false)
+      await onSubmit(data);
+      form.reset();
+      setDate(undefined);
+      setTime("");
+      onOpenChange(false);
     } catch (error) {
-      console.error("Error submitting form:", error)
+      console.error("Error submitting form:", error);
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
-  const phoneNumber = form.watch("phoneNumber")
-  const message = form.watch("message")
-  const phoneValid = phoneNumber && /^\+[1-9]\d{1,14}$/.test(phoneNumber)
+  const phoneNumber = form.watch("phoneNumber");
+  const message = form.watch("message");
+  const phoneValid = phoneNumber && /^\+[1-9]\d{1,14}$/.test(phoneNumber);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -108,7 +150,6 @@ export function ReminderForm({
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-          {/* Title Field */}
           <div className="space-y-2">
             <Label htmlFor="title">
               Reminder Title <span className="text-destructive">*</span>
@@ -117,7 +158,9 @@ export function ReminderForm({
               id="title"
               placeholder="e.g., Call Mom on her birthday"
               {...form.register("title")}
-              className={form.formState.errors.title ? "border-destructive" : ""}
+              className={
+                form.formState.errors.title ? "border-destructive" : ""
+              }
             />
             {form.formState.errors.title && (
               <p className="text-sm text-destructive flex items-center gap-1">
@@ -127,7 +170,6 @@ export function ReminderForm({
             )}
           </div>
 
-          {/* Phone Number */}
           <div className="space-y-2">
             <Label htmlFor="phone">
               Phone Number <span className="text-destructive">*</span>
@@ -141,7 +183,7 @@ export function ReminderForm({
                 {...form.register("phoneNumber")}
                 className={cn(
                   "pl-10",
-                  form.formState.errors.phoneNumber && "border-destructive"
+                  form.formState.errors.phoneNumber && "border-destructive",
                 )}
               />
             </div>
@@ -159,7 +201,6 @@ export function ReminderForm({
             )}
           </div>
 
-          {/* Date & Time */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>
@@ -171,7 +212,7 @@ export function ReminderForm({
                     variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal",
-                      !date && "text-muted-foreground"
+                      !date && "text-muted-foreground",
                     )}
                   >
                     <CalendarIcon className="h-4 w-4 mr-2" />
@@ -183,7 +224,9 @@ export function ReminderForm({
                     mode="single"
                     selected={date}
                     onSelect={setDate}
-                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    disabled={(date) =>
+                      date < new Date(new Date().setHours(0, 0, 0, 0))
+                    }
                     initialFocus
                   />
                 </PopoverContent>
@@ -195,8 +238,12 @@ export function ReminderForm({
                 Time <span className="text-destructive">*</span>
               </Label>
               <div className="relative">
-                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Clock
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
+                  onClick={() => timeInputRef.current?.showPicker()}
+                />
                 <Input
+                  ref={timeInputRef}
                   id="time"
                   type="time"
                   value={time}
@@ -207,51 +254,18 @@ export function ReminderForm({
             </div>
           </div>
 
-          {/* Timezone */}
           <div className="space-y-2">
-            <Label>
-              Timezone <span className="text-destructive">*</span>
-            </Label>
-            <Select
-              value={form.watch("timezone")}
-              onValueChange={(value) => form.setValue("timezone", value)}
-            >
-              <SelectTrigger>
-                <div className="flex items-center">
-                  <Globe className="h-4 w-4 mr-2" />
-                  <SelectValue />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="America/Guatemala">
-                  America/Guatemala (GMT-6)
-                </SelectItem>
-                <SelectItem value="America/New_York">
-                  America/New York (GMT-5)
-                </SelectItem>
-                <SelectItem value="America/Chicago">
-                  America/Chicago (GMT-6)
-                </SelectItem>
-                <SelectItem value="America/Denver">
-                  America/Denver (GMT-7)
-                </SelectItem>
-                <SelectItem value="America/Los_Angeles">
-                  America/Los Angeles (GMT-8)
-                </SelectItem>
-                <SelectItem value="Europe/London">
-                  Europe/London (GMT+0)
-                </SelectItem>
-                <SelectItem value="Europe/Paris">
-                  Europe/Paris (GMT+1)
-                </SelectItem>
-                <SelectItem value="Asia/Tokyo">
-                  Asia/Tokyo (GMT+9)
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <Label>Timezone (Auto-detected)</Label>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-md border bg-muted/50 text-sm text-muted-foreground">
+              <Globe className="h-4 w-4" />
+              <span className="font-mono">{userTimezone}</span>
+              <CheckCircle className="h-4 w-4 ml-auto text-green-600 dark:text-green-400" />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Your reminder will be scheduled according to your local timezone
+            </p>
           </div>
 
-          {/* Message */}
           <div className="space-y-2">
             <Label htmlFor="message">
               Message <span className="text-destructive">*</span>
@@ -264,7 +278,7 @@ export function ReminderForm({
               maxLength={500}
               className={cn(
                 "resize-none",
-                form.formState.errors.message && "border-destructive"
+                form.formState.errors.message && "border-destructive",
               )}
             />
             <div className="flex items-center justify-between text-sm">
@@ -285,7 +299,6 @@ export function ReminderForm({
             )}
           </div>
 
-          {/* Actions */}
           <DialogFooter>
             <Button
               type="button"
@@ -312,5 +325,5 @@ export function ReminderForm({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

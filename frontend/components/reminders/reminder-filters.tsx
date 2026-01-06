@@ -1,27 +1,27 @@
-"use client"
+"use client";
 
-import { Search } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 
 interface ReminderFiltersProps {
-  searchQuery: string
-  onSearchChange: (query: string) => void
-  activeTab: "all" | "scheduled" | "completed" | "failed"
-  onTabChange: (tab: "all" | "scheduled" | "completed" | "failed") => void
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  activeTab: "all" | "scheduled" | "completed" | "failed";
+  onTabChange: (tab: "all" | "scheduled" | "completed" | "failed") => void;
   counts: {
-    all: number
-    scheduled: number
-    completed: number
-    failed: number
-  }
+    all: number;
+    scheduled: number;
+    completed: number;
+    failed: number;
+  };
 }
 
 const tabLabels = {
@@ -29,7 +29,7 @@ const tabLabels = {
   scheduled: "Scheduled",
   completed: "Completed",
   failed: "Failed",
-}
+};
 
 export function ReminderFilters({
   searchQuery,
@@ -40,19 +40,18 @@ export function ReminderFilters({
 }: ReminderFiltersProps) {
   return (
     <div className="space-y-4">
-      {/* Mobile: Dropdown - Tablet/Desktop: Tabs */}
-
-      {/* Dropdown for mobile */}
       <div className="md:hidden">
         <Select value={activeTab} onValueChange={(v) => onTabChange(v as any)}>
           <SelectTrigger>
             <SelectValue>
-              {tabLabels[activeTab]} {counts[activeTab] > 0 && `(${counts[activeTab]})`}
+              {tabLabels[activeTab]}{" "}
+              {counts[activeTab] > 0 && `(${counts[activeTab]})`}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">
-              All {counts.all > 0 && `(${counts.all})`}
+              All{" "}
+              {counts.all > 0 && activeTab === "all" ? `(${counts.all})` : null}
             </SelectItem>
             <SelectItem value="scheduled">
               Scheduled {counts.scheduled > 0 && `(${counts.scheduled})`}
@@ -67,13 +66,19 @@ export function ReminderFilters({
         </Select>
       </div>
 
-      {/* Tabs for tablet/desktop */}
       <div className="hidden md:block">
-        <Tabs value={activeTab} onValueChange={(v) => onTabChange(v as any)}>
-          <TabsList className="w-full grid grid-cols-4">
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => onTabChange(v as any)}
+          activationMode="manual"
+        >
+          <TabsList
+            className="w-full grid grid-cols-4"
+            aria-label="Filter reminders by status"
+          >
             <TabsTrigger value="all" className="relative">
               All
-              {counts.all > 0 && (
+              {counts.all > 0 && activeTab === "all" && (
                 <span className="ml-1.5 text-xs text-muted-foreground">
                   ({counts.all})
                 </span>
@@ -107,7 +112,6 @@ export function ReminderFilters({
         </Tabs>
       </div>
 
-      {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -118,5 +122,5 @@ export function ReminderFilters({
         />
       </div>
     </div>
-  )
+  );
 }

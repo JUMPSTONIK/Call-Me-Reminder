@@ -90,6 +90,32 @@ body {
   color: hsl(var(--foreground));
 }
 
+/* Fix for mobile dropdown causing body margin */
+@media (max-width: 768px) {
+  body[data-scroll-locked],
+  html:has(body[data-scroll-locked]) {
+    padding-right: 0 !important;
+    margin-right: 0 !important;
+    overflow: auto !important;
+  }
+
+  /* Prevent Radix UI from adding width changes */
+  body[data-scroll-locked] {
+    width: 100% !important;
+    position: relative !important;
+  }
+}
+
+/* Hide native time picker icon */
+input[type="time"]::-webkit-calendar-picker-indicator {
+  display: none;
+  -webkit-appearance: none;
+}
+
+input[type="time"]::-moz-calendar-picker-indicator {
+  display: none;
+}
+
 @theme {
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
@@ -145,13 +171,21 @@ body {
 }
 
 @keyframes accordion-down {
-  from { height: 0; }
-  to { height: var(--radix-accordion-content-height); }
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
 }
 
 @keyframes accordion-up {
-  from { height: var(--radix-accordion-content-height); }
-  to { height: 0; }
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
 }
 
 /* Badge variants with proper contrast */

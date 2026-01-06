@@ -1,166 +1,180 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Plus } from "lucide-react"
-import { Header } from "@/components/layout/header"
-import { PageHeader } from "@/components/layout/page-header"
-import { Button } from "@/components/ui/button"
-import { ReminderFilters } from "@/components/reminders/reminder-filters"
-import { SortToggle } from "@/components/reminders/sort-toggle"
-import { ReminderCard } from "@/components/reminders/reminder-card"
-import { ReminderEmpty } from "@/components/reminders/reminder-empty"
-import { ReminderListSkeleton } from "@/components/reminders/reminder-skeleton"
-import { ReminderForm } from "@/components/reminders/reminder-form"
-import { toast } from "sonner"
-import type { Reminder } from "@/lib/types"
-import type { ReminderFormValues } from "@/lib/validations/reminder-schema"
-
-// Mock data for demonstration
-const mockReminders: Reminder[] = [
-  {
-    id: "1",
-    title: "Call Mom on her birthday",
-    message: "Hey Mom! Just wanted to remind you that today is your special day. Happy birthday! 🎉",
-    phoneNumber: "+15551234567",
-    scheduledFor: new Date(Date.now() + 14 * 60 * 60 * 1000), // 14 hours from now
-    timezone: "America/New_York",
-    status: "scheduled",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "2",
-    title: "Take medication reminder",
-    message: "Don't forget to take your daily medication. Your health is important!",
-    phoneNumber: "+15559876543",
-    scheduledFor: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
-    timezone: "America/Los_Angeles",
-    status: "scheduled",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  {
-    id: "3",
-    title: "Meeting with client",
-    message: "You have a meeting scheduled with the client at 3 PM today.",
-    phoneNumber: "+15551112222",
-    scheduledFor: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
-    timezone: "America/Chicago",
-    status: "completed",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-]
+import { useState, useMemo } from "react";
+import { Header } from "@/components/layout/header";
+import { PageHeader } from "@/components/layout/page-header";
+import { ReminderFilters } from "@/components/reminders/reminder-filters";
+import { SortToggle } from "@/components/reminders/sort-toggle";
+import { ReminderCard } from "@/components/reminders/reminder-card";
+import { ReminderEmpty } from "@/components/reminders/reminder-empty";
+import { ReminderListSkeleton } from "@/components/reminders/reminder-skeleton";
+import { ReminderForm } from "@/components/reminders/reminder-form";
+import { toast } from "sonner";
+import type { Reminder } from "@/lib/types";
+import type { ReminderFormValues } from "@/lib/validations/reminder-schema";
+import {
+  useReminders,
+  useCreateReminder,
+  useUpdateReminder,
+  useDeleteReminder,
+} from "@/lib/api/hooks";
 
 export default function DashboardPage() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [activeTab, setActiveTab] = useState<"all" | "scheduled" | "completed" | "failed">("all")
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
-  const [isFormOpen, setIsFormOpen] = useState(false)
-  const [editingReminder, setEditingReminder] = useState<Reminder | null>(null)
-  const [reminders, setReminders] = useState<Reminder[]>(mockReminders)
-  const [isLoading, setIsLoading] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<
+    "all" | "scheduled" | "completed" | "failed"
+  >("all");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
 
-  // Filter and sort reminders
-  const filteredReminders = reminders
-    .filter((reminder) => {
-      const matchesSearch = reminder.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        reminder.message.toLowerCase().includes(searchQuery.toLowerCase())
+  const statusFilter = activeTab === "all" ? undefined : activeTab;
+  const {
+    data: reminders = [],
+    isLoading,
+    error,
+  } = useReminders({ status: statusFilter });
 
-      const matchesTab = activeTab === "all" || reminder.status === activeTab
+  const createMutation = useCreateReminder();
+  const updateMutation = useUpdateReminder();
+  const deleteMutation = useDeleteReminder();
 
-      return matchesSearch && matchesTab
-    })
-    .sort((a, b) => {
-      const dateA = new Date(a.scheduledFor).getTime()
-      const dateB = new Date(b.scheduledFor).getTime()
+  const filteredReminders = useMemo(() => {
+    let filtered = reminders;
 
-      return sortOrder === "asc" ? dateA - dateB : dateB - dateA
-    })
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (reminder) =>
+          reminder.title.toLowerCase().includes(query) ||
+          reminder.message.toLowerCase().includes(query),
+      );
+    }
 
-  // Calculate counts for tabs
-  const counts = {
-    all: reminders.length,
-    scheduled: reminders.filter((r) => r.status === "scheduled").length,
-    completed: reminders.filter((r) => r.status === "completed").length,
-    failed: reminders.filter((r) => r.status === "failed").length,
-  }
+    return [...filtered].sort((a, b) => {
+      const dateA = new Date(a.scheduledFor).getTime();
+      const dateB = new Date(b.scheduledFor).getTime();
+      return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+    });
+  }, [reminders, searchQuery, sortOrder]);
+
+  const counts = useMemo(() => {
+    return {
+      all: reminders.length,
+      scheduled: reminders.filter((r) => r.status === "scheduled").length,
+      completed: reminders.filter((r) => r.status === "completed").length,
+      failed: reminders.filter((r) => r.status === "failed").length,
+    };
+  }, [reminders]);
 
   const handleCreateReminder = async (data: ReminderFormValues) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    if (editingReminder) {
-      // Update existing reminder
-      setReminders(
-        reminders.map((r) =>
-          r.id === editingReminder.id
-            ? {
-                ...r,
-                title: data.title,
-                message: data.message,
-                phoneNumber: data.phoneNumber,
-                scheduledFor: data.scheduledFor,
-                timezone: data.timezone,
-                updatedAt: new Date(),
-              }
-            : r
-        )
-      )
-      toast.success("Reminder updated successfully!")
-      setEditingReminder(null)
-    } else {
-      // Create new reminder
-      const newReminder: Reminder = {
-        id: Math.random().toString(36).substring(7),
-        title: data.title,
-        message: data.message,
-        phoneNumber: data.phoneNumber,
-        scheduledFor: data.scheduledFor,
-        timezone: data.timezone,
-        status: "scheduled",
-        createdAt: new Date(),
-        updatedAt: new Date(),
+    try {
+      if (editingReminder) {
+        await updateMutation.mutateAsync({
+          id: editingReminder.id,
+          data: {
+            title: data.title,
+            message: data.message,
+            phone_number: data.phoneNumber,
+            scheduled_for: data.scheduledFor.toISOString(),
+            timezone: data.timezone,
+          },
+        });
+        toast.success("Reminder updated successfully!");
+        setEditingReminder(null);
+      } else {
+        await createMutation.mutateAsync({
+          title: data.title,
+          message: data.message,
+          phone_number: data.phoneNumber,
+          scheduled_for: data.scheduledFor.toISOString(),
+          timezone: data.timezone,
+        });
+        toast.success("Reminder created successfully!");
       }
-
-      setReminders([newReminder, ...reminders])
-      toast.success("Reminder created successfully!")
+      handleCloseForm();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "An error occurred";
+      toast.error(
+        editingReminder
+          ? "Failed to update reminder"
+          : "Failed to create reminder",
+        {
+          description: message,
+        },
+      );
     }
-  }
+  };
 
   const handleEditReminder = (id: string) => {
-    const reminder = reminders.find((r) => r.id === id)
+    const reminder = reminders.find((r) => r.id === id);
     if (reminder) {
-      setEditingReminder(reminder)
-      setIsFormOpen(true)
+      setEditingReminder(reminder);
+      setIsFormOpen(true);
     }
-  }
+  };
 
   const handleOpenForm = () => {
-    setEditingReminder(null)
-    setIsFormOpen(true)
-  }
+    setEditingReminder(null);
+    setIsFormOpen(true);
+  };
 
   const handleCloseForm = () => {
-    setIsFormOpen(false)
-    setEditingReminder(null)
-  }
+    setIsFormOpen(false);
+    setEditingReminder(null);
+  };
 
-  const handleDeleteReminder = (id: string) => {
-    setReminders(reminders.filter((r) => r.id !== id))
-    toast.success("Reminder deleted successfully!")
-  }
-
-  const handleRetryReminder = (id: string) => {
-    const reminder = reminders.find((r) => r.id === id)
-    if (reminder) {
-      setReminders(
-        reminders.map((r) =>
-          r.id === id ? { ...r, status: "scheduled" as const } : r
-        )
-      )
-      toast.success("Reminder rescheduled!")
+  const handleDeleteReminder = async (id: string) => {
+    try {
+      await deleteMutation.mutateAsync(id);
+      toast.success("Reminder deleted successfully!");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "An error occurred";
+      toast.error("Failed to delete reminder", {
+        description: message,
+      });
     }
+  };
+
+  const handleRetryReminder = async (id: string) => {
+    const reminder = reminders.find((r) => r.id === id);
+    if (!reminder) return;
+
+    try {
+      const newScheduledTime = new Date(Date.now() + 5 * 60 * 1000);
+
+      await updateMutation.mutateAsync({
+        id,
+        data: {
+          scheduled_for: newScheduledTime.toISOString(),
+        },
+      });
+      toast.success("Reminder rescheduled for 5 minutes from now!");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "An error occurred";
+      toast.error("Failed to reschedule reminder", {
+        description: message,
+      });
+    }
+  };
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header onNewReminderClick={handleOpenForm} />
+        <main className="container mx-auto py-8 px-4">
+          <div className="text-center py-12">
+            <p className="text-destructive mb-2">Failed to load reminders</p>
+            <p className="text-sm text-muted-foreground">
+              {error instanceof Error ? error.message : "An error occurred"}
+            </p>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   return (
@@ -168,14 +182,12 @@ export default function DashboardPage() {
       <Header onNewReminderClick={handleOpenForm} />
 
       <main className="container mx-auto py-8 px-4">
-        {/* Page Header */}
         <PageHeader
           title="Reminders"
           description="Manage your phone call reminders"
           className="mb-8"
         />
 
-        {/* Filters and Sort */}
         <div className="mb-6 space-y-4">
           <ReminderFilters
             searchQuery={searchQuery}
@@ -185,7 +197,6 @@ export default function DashboardPage() {
             counts={counts}
           />
 
-          {/* Sort Toggle */}
           <div className="flex justify-end">
             <SortToggle
               sortOrder={sortOrder}
@@ -194,7 +205,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Content */}
         {isLoading ? (
           <ReminderListSkeleton />
         ) : filteredReminders.length === 0 ? (
@@ -222,7 +232,6 @@ export default function DashboardPage() {
         )}
       </main>
 
-      {/* Create/Edit Form */}
       <ReminderForm
         open={isFormOpen}
         onOpenChange={handleCloseForm}
@@ -241,5 +250,5 @@ export default function DashboardPage() {
         isEditing={!!editingReminder}
       />
     </div>
-  )
+  );
 }

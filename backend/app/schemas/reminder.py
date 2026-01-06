@@ -7,56 +7,49 @@ import pytz
 from app.models.reminder import ReminderStatus, CallAttemptStatus
 
 
-# Base Reminder Schema
 class ReminderBase(BaseModel):
-    """Base schema for Reminder with common fields"""
     title: str = Field(..., min_length=3, max_length=100, description="Reminder title")
-    message: str = Field(..., min_length=10, max_length=500, description="Message to be spoken during call")
+    message: str = Field(
+        ..., min_length=10, max_length=500, description="Message to be spoken during call"
+    )
     phone_number: str = Field(..., max_length=20, description="Phone number in E.164 format")
     scheduled_for: datetime = Field(..., description="When to trigger the reminder (UTC)")
     timezone: str = Field(..., max_length=50, description="IANA timezone (e.g., America/Guatemala)")
 
-    @field_validator('title', 'message')
+    @field_validator("title", "message")
     @classmethod
     def strip_whitespace(cls, v: str) -> str:
-        """Strip whitespace from title and message"""
         return v.strip()
 
-    @field_validator('phone_number')
+    @field_validator("phone_number")
     @classmethod
     def validate_phone_number(cls, v: str) -> str:
-        """Validate and normalize phone number to E.164 format"""
         try:
             parsed = phonenumbers.parse(v, None)
             if not phonenumbers.is_valid_number(parsed):
                 raise ValueError("Invalid phone number")
-            # Normalize to E.164
             return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
         except phonenumbers.NumberParseException:
             raise ValueError("Phone number must be in E.164 format (e.g., +15551234567)")
 
-    @field_validator('timezone')
+    @field_validator("timezone")
     @classmethod
     def validate_timezone(cls, v: str) -> str:
-        """Validate timezone against IANA database"""
         if v not in pytz.all_timezones:
             raise ValueError(f"Invalid timezone: {v}. Must be a valid IANA timezone.")
         return v
 
-    @field_validator('scheduled_for')
+    @field_validator("scheduled_for")
     @classmethod
     def validate_future_date(cls, v: datetime) -> datetime:
-        """Ensure reminder is at least 30 seconds in the future"""
         from datetime import timedelta, timezone
 
         now = datetime.now(timezone.utc)
         min_time = now + timedelta(seconds=30)
 
-        # Ensure datetime is timezone-aware
         if v.tzinfo is None:
             raise ValueError("scheduled_for must include timezone information")
 
-        # Convert to UTC for comparison
         v_utc = v.astimezone(timezone.utc)
 
         if v_utc <= min_time:
@@ -75,37 +68,31 @@ class ReminderBase(BaseModel):
                 "message": "Hey Mom! Just wanted to wish you a happy birthday!",
                 "phone_number": "+15551234567",
                 "scheduled_for": "2026-01-15T10:00:00Z",
-                "timezone": "America/Guatemala"
+                "timezone": "America/Guatemala",
             }
         }
     )
 
 
-# Create Schema
 class ReminderCreate(ReminderBase):
-    """Schema for creating a new reminder"""
     pass
 
 
-# Update Schema
 class ReminderUpdate(BaseModel):
-    """Schema for updating an existing reminder"""
     title: Optional[str] = Field(None, min_length=3, max_length=100)
     message: Optional[str] = Field(None, min_length=10, max_length=500)
     phone_number: Optional[str] = Field(None, max_length=20)
     scheduled_for: Optional[datetime] = None
     timezone: Optional[str] = Field(None, max_length=50)
 
-    @field_validator('title', 'message')
+    @field_validator("title", "message")
     @classmethod
     def strip_whitespace(cls, v: Optional[str]) -> Optional[str]:
-        """Strip whitespace from title and message"""
         return v.strip() if v else v
 
-    @field_validator('phone_number')
+    @field_validator("phone_number")
     @classmethod
     def validate_phone_number(cls, v: Optional[str]) -> Optional[str]:
-        """Validate and normalize phone number to E.164 format"""
         if v is None:
             return v
         try:
@@ -116,20 +103,18 @@ class ReminderUpdate(BaseModel):
         except phonenumbers.NumberParseException:
             raise ValueError("Phone number must be in E.164 format (e.g., +15551234567)")
 
-    @field_validator('timezone')
+    @field_validator("timezone")
     @classmethod
     def validate_timezone(cls, v: Optional[str]) -> Optional[str]:
-        """Validate timezone against IANA database"""
         if v is None:
             return v
         if v not in pytz.all_timezones:
             raise ValueError(f"Invalid timezone: {v}. Must be a valid IANA timezone.")
         return v
 
-    @field_validator('scheduled_for')
+    @field_validator("scheduled_for")
     @classmethod
     def validate_future_date(cls, v: Optional[datetime]) -> Optional[datetime]:
-        """Ensure reminder is at least 30 seconds in the future"""
         if v is None:
             return v
 
@@ -153,15 +138,12 @@ class ReminderUpdate(BaseModel):
         return v
 
 
-# Retry Schema
 class ReminderRetry(BaseModel):
-    """Schema for retrying a failed reminder"""
     scheduled_for: datetime = Field(..., description="New scheduled time for the reminder")
 
-    @field_validator('scheduled_for')
+    @field_validator("scheduled_for")
     @classmethod
     def validate_future_date(cls, v: datetime) -> datetime:
-        """Ensure reminder is at least 30 seconds in the future"""
         from datetime import timedelta, timezone
 
         now = datetime.now(timezone.utc)
@@ -182,9 +164,7 @@ class ReminderRetry(BaseModel):
         return v
 
 
-# Call Attempt Schema
 class CallAttemptResponse(BaseModel):
-    """Schema for call attempt response"""
     id: UUID
     attempt_number: int
     status: CallAttemptStatus
@@ -197,9 +177,7 @@ class CallAttemptResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-# Response Schema
 class ReminderResponse(BaseModel):
-    """Schema for reminder response"""
     id: UUID
     user_id: Optional[UUID] = None
     title: str
@@ -219,9 +197,7 @@ class ReminderResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-# List Response Schema
 class ReminderListResponse(BaseModel):
-    """Schema for paginated list of reminders"""
     reminders: List[ReminderResponse]
     total: int
     page: int
@@ -229,9 +205,7 @@ class ReminderListResponse(BaseModel):
     total_pages: int
 
 
-# Simplified response for list views (without call_attempts)
 class ReminderListItem(BaseModel):
-    """Simplified schema for reminder list items"""
     id: UUID
     title: str
     message: str
