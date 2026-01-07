@@ -277,12 +277,12 @@ You'll see:
 - Answer the call and listen to the message
 
 **Test 2: Retry Logic**
-- Schedule reminder 1 minute ahead
+- Schedule reminder 2 minute ahead
 - Use an invalid phone number (e.g., `+15550000000`)
 - Watch it fail and retry automatically
 
 **Test 3: Multiple Reminders**
-- Create 3 reminders with 1 minute intervals
+- Create 3 reminders with 2 minute intervals
 - Verify scheduler handles multiple concurrent jobs
 
 ### 6. Troubleshooting Test Calls
