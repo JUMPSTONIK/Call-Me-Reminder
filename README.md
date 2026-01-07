@@ -3,10 +3,11 @@
 A modern web application that sends automated phone call reminders using AI voice assistants powered by Vapi.
 
 ```bash
-# Get started in 3 commands
-cp backend/.env.local.example backend/.env.local  # Add your Vapi credentials
-make setup                                        # Setup everything
-make dev                                          # Start development
+# Get started in 4 steps
+cp backend/.env.local.example backend/.env.local  # 1. Copy config template
+# 2. Edit backend/.env.local - Add your Vapi API credentials (see instructions below)
+make setup                                        # 3. Build Docker containers and database
+make dev                                          # 4. Start all services
 ```
 
 ## 🌟 Features
@@ -51,14 +52,41 @@ make dev                                          # Start development
 ### 1. Clone and Configure
 
 ```bash
+# Clone the repository
 git clone <repository-url>
 cd Call-Me-Reminder-Front
 
-# Setup environment variables
+# Copy environment template files
 cp backend/.env.local.example backend/.env.local
 cp frontend/.env.local.example frontend/.env.local
-# Edit backend/.env.local with your Vapi credentials
 ```
+
+**⚠️ IMPORTANT: Add Your Vapi Credentials**
+
+Open `backend/.env.local` and replace the placeholders with your actual credentials:
+
+1. **Get Vapi API Key:**
+   - Sign up at [Vapi Dashboard](https://dashboard.vapi.ai/)
+   - Go to **Settings → API Keys**
+   - Copy your **Private API Key** (starts with `sk_`)
+   - Paste it in `VAPI_API_KEY=your_vapi_private_api_key_here`
+
+2. **Get Phone Number ID:**
+   - In Vapi Dashboard, go to **Phone Numbers**
+   - Copy the **Phone Number ID** (or use Vapi's default if you don't have one)
+   - Paste it in `VAPI_PHONE_NUMBER_ID=your_vapi_phone_number_id_here`
+
+Your `backend/.env.local` should look like this (with your real values):
+```bash
+VAPI_API_KEY=sk_live_abc123xyz...     # Your actual Vapi private key
+VAPI_PHONE_NUMBER_ID=pn_abc123...     # Your actual phone number ID
+ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+```
+
+**⚠️ SECURITY NOTES:**
+- ⛔ **NEVER commit `.env.local` files to Git** (already in .gitignore)
+- ⛔ **NEVER share your API keys publicly**
+- ✅ Only modify your local `.env.local` files, NOT the `.env.local.example` templates
 
 ### 2. Run with Make
 
@@ -239,6 +267,61 @@ Call-Me-Reminder-Front/
 - **Max Future**: Maximum 1 year ahead
 - **Timezone**: Auto-detected from browser
 
+## 🔧 Troubleshooting
+
+### CORS Error: "No 'Access-Control-Allow-Origin' header"
+
+If you see this error when running the project:
+```
+Access to XMLHttpRequest at 'http://localhost:8000/api/reminders/' from origin
+'http://localhost:3000' has been blocked by CORS policy
+```
+
+**Solution:**
+1. Verify your `backend/.env.local` file exists and contains:
+   ```bash
+   ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+   ```
+
+2. If you copied the project to a new machine, make sure you:
+   - Ran `cp backend/.env.local.example backend/.env.local`
+   - Did NOT modify the `.env.local.example` file
+   - The `.env.local` file is in your local machine (not committed to git)
+
+3. Restart the backend service:
+   ```bash
+   docker-compose restart backend
+   ```
+
+4. Check backend logs to verify CORS configuration:
+   ```bash
+   make logs
+   # Look for: "CORS configured for origins: ['http://localhost:3000', 'http://127.0.0.1:3000']"
+   ```
+
+### Services Not Starting
+
+If Docker services fail to start:
+```bash
+# Stop everything
+make stop
+
+# Clean and rebuild
+make clean
+make setup
+make dev
+```
+
+### Database Connection Issues
+
+If you see database connection errors:
+```bash
+# Check if PostgreSQL is running
+docker-compose ps
+
+# If db is unhealthy, restart it
+docker-compose restart db
+```
 
 ## 🤝 Contributing
 
