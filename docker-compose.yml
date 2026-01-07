@@ -33,10 +33,6 @@ services:
       - /app/__pycache__
     ports:
       - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://callme:reminder123@db:5432/call_me_reminder
-      - ENVIRONMENT=development
-      - DEBUG=true
     env_file:
       - ./backend/.env.local
     depends_on:
@@ -64,8 +60,8 @@ services:
       - /app/.next
     ports:
       - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    env_file:
+      - ./frontend/.env.local
     depends_on:
       - backend
     healthcheck:

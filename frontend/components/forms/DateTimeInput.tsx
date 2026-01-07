@@ -96,7 +96,10 @@ export function DateTimeInput({
         <div className="relative">
           <Clock
             className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
-            onClick={() => timeInputRef.current?.showPicker()}
+            onClick={() => {
+              timeInputRef.current?.focus();
+              timeInputRef.current?.showPicker();
+            }}
           />
           <Input
             ref={timeInputRef}
