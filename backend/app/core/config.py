@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     RETRY_DELAY_MINUTES: int = 5
 
     class Config:
-        env_file = ".env"
+        env_file = ".env.local"
         case_sensitive = True
 
 
