@@ -104,7 +104,7 @@ export default function DashboardPage() {
             />
           )
         ) : (
-          <div className="space-y-4">
+          <div className="flex flex-col gap-4 md:grid md:grid-cols-2">
             {filteredReminders.map((reminder) => (
               <ReminderCard
                 key={reminder.id}

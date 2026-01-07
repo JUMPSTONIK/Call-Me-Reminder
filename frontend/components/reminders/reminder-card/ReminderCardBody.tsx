@@ -56,7 +56,7 @@ export function ReminderCardBody({
           " rounded-lg p-4",
           status === "failed"
             ? "bg-destructive/10 border border-destructive/20 dark:bg-destructive/20 dark:border-destructive/30"
-            : "bg-muted",
+            : "bg-secondary border border-border dark:bg-secondary/80 dark:border-border",
         )}
       >
         <p
@@ -64,7 +64,7 @@ export function ReminderCardBody({
             "text-sm line-clamp-2",
             status === "failed"
               ? "text-destructive dark:text-red-300"
-              : "text-muted-foreground",
+              : "text-secondary-foreground dark:text-foreground/80",
           )}
         >
           {message}
