@@ -4,9 +4,9 @@ A modern web application that sends automated phone call reminders using AI voic
 
 ```bash
 # Get started in 3 commands
-cp backend/.env.example backend/.env  # Add your Vapi credentials
-make setup                            # Setup everything
-make dev                              # Start development
+cp backend/.env.local.example backend/.env.local  # Add your Vapi credentials
+make setup                                        # Setup everything
+make dev                                          # Start development
 ```
 
 ## 🌟 Features
@@ -55,9 +55,9 @@ git clone <repository-url>
 cd Call-Me-Reminder-Front
 
 # Setup environment variables
-cp backend/.env.example backend/.env
+cp backend/.env.local.example backend/.env.local
 cp frontend/.env.local.example frontend/.env.local
-# Edit backend/.env with your Vapi credentials
+# Edit backend/.env.local with your Vapi credentials
 ```
 
 ### 2. Run with Make
@@ -86,7 +86,7 @@ make help    # Show all commands
 
 ## 🔧 Environment Variables
 
-### Backend (.env)
+### Backend (.env.local)
 
 ```bash
 # Database
