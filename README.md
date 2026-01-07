@@ -114,22 +114,32 @@ make help    # Show all commands
 
 ## 🔧 Environment Variables
 
+### Required Variables
+
+**✅ Vapi API (Required)**
+- This project uses **Vapi** for AI-powered phone calls
+- Get your credentials at [Vapi Dashboard](https://dashboard.vapi.ai/)
+
+**⛔ Twilio NOT Required**
+- Previous versions used Twilio, but it has been **removed**
+- Only Vapi credentials are needed
+
 ### Backend (.env.local)
 
 ```bash
 # Database
 DATABASE_URL=postgresql://user:password@localhost:5432/call_me_reminder
 
-# Vapi Configuration
-VAPI_API_KEY=your_vapi_private_key
+# Vapi Configuration (REQUIRED)
+VAPI_API_KEY=your_vapi_private_key        # Get from Vapi Dashboard
+VAPI_PHONE_NUMBER_ID=your_phone_number_id # Get from Vapi Dashboard
 VAPI_API_URL=https://api.vapi.ai
-VAPI_ASSISTANT_ID=your_assistant_id  # Optional
-VAPI_PHONE_NUMBER_ID=your_phone_number_id
-VAPI_VOICE=11labs-rachel  # Voice for calls
+VAPI_ASSISTANT_ID=your_assistant_id       # Optional
+VAPI_VOICE=11labs-rachel                  # Voice for calls
 
 # Webhook
 WEBHOOK_BASE_URL=http://localhost:8000  # Change for production
-WEBHOOK_SECRET=your_webhook_secret  # Optional
+WEBHOOK_SECRET=your_webhook_secret      # Optional
 
 # API
 ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
@@ -195,6 +205,104 @@ make test-frontend # Run frontend tests only
 - ✅ Date/time validation
 - ✅ Input constraints (min/max lengths)
 
+## 📞 Quick Test: Call Workflow
+
+Want to test the complete call workflow quickly? Follow these steps:
+
+### 1. Prerequisites
+- ✅ All services running (`make dev`)
+- ✅ Vapi credentials configured in `backend/.env.local`
+- ✅ Valid phone number to receive the test call
+
+### 2. Create a Test Reminder
+
+**Option A: Using the UI (Recommended)**
+1. Open http://localhost:3000
+2. Fill in the form:
+   - **Title**: "Test Reminder"
+   - **Phone Number**: Your phone number in E.164 format (e.g., `+15551234567`)
+   - **Message**: "This is a test call from Call Me Reminder"
+   - **Date & Time**: Set to **2-3 minutes from now**
+3. Click "Schedule Reminder"
+
+**Option B: Using the API**
+```bash
+curl -X POST http://localhost:8000/api/reminders/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Test Reminder",
+    "phone_number": "+15551234567",
+    "message": "This is a test call",
+    "scheduled_for": "2026-01-07T10:30:00",
+    "timezone": "UTC"
+  }'
+```
+
+### 3. Monitor the Reminder
+
+**Watch the logs:**
+```bash
+make logs
+```
+
+You'll see:
+1. **Reminder created** - Saved to database
+2. **Scheduler picks it up** - Job scheduled in APScheduler
+3. **Call initiated** - Vapi API call triggered at scheduled time
+4. **Webhook updates** - Status updates from Vapi (ringing, answered, completed)
+
+**Watch the dashboard:**
+- The reminder card will show "Scheduled" (blue badge)
+- At the scheduled time, status changes to "Completed" (green) or "Failed" (red)
+- Click "View Details" to see call attempt logs
+
+### 4. Expected Behavior
+
+**Success Flow:**
+1. ⏰ Reminder created with status `SCHEDULED`
+2. ⏰ Scheduler triggers call at exact scheduled time
+3. 📞 Vapi makes phone call to the number
+4. 📱 Your phone rings
+5. 🤖 AI assistant speaks the message
+6. ✅ Status updates to `COMPLETED`
+
+**If Call Fails:**
+- Status changes to `FAILED`
+
+### 5. Common Test Scenarios
+
+**Test 1: Successful Call**
+- Schedule reminder 2-3 minutes ahead
+- Use a valid phone number
+- Answer the call and listen to the message
+
+**Test 2: Retry Logic**
+- Schedule reminder 1 minute ahead
+- Use an invalid phone number (e.g., `+15550000000`)
+- Watch it fail and retry automatically
+
+**Test 3: Multiple Reminders**
+- Create 3 reminders with 1 minute intervals
+- Verify scheduler handles multiple concurrent jobs
+
+### 6. Troubleshooting Test Calls
+
+**Call not received?**
+- Check backend logs: `make logs`
+- Verify Vapi credentials in `.env.local`
+- Ensure phone number is in E.164 format (`+1` for US)
+- Check Vapi dashboard for call logs: https://dashboard.vapi.ai/
+
+**Status stuck on "Scheduled"?**
+- Check if backend container is running: `docker-compose ps`
+- Verify scheduler is running: check `/health` endpoint
+- Look for errors in logs: `make logs`
+
+**Call failed immediately?**
+- Vapi free tier has limitations (no international calls)
+- Phone number must be valid and reachable
+- Check failure_reason in reminder details
+
 ## 📂 Project Structure
 
 ```
@@ -211,6 +319,8 @@ Call-Me-Reminder-Front/
 │   ├── lib/
 │   │   ├── api/            # React Query hooks
 │   │   ├── validations/    # Zod schemas
+│   │   ├── constants/      # Constant values
+│   │   ├── utils/          # Utility functions
 │   │   └── types.ts        # TypeScript types
 │   └── hooks/              # Custom hooks
 │
